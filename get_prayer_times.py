@@ -7,7 +7,7 @@ import os
 #======== constants ==========
 load_dotenv() # Load the environment variables from .env file
 
-api_url = f'http://{os.getenv("HOME_ASSISTANT_URL")}/api/services/calendar/create_event'
+api_url = f'{os.getenv("HOME_ASSISTANT_URL")}/api/services/calendar/create_event'
 headers = {
     'Authorization': f'Bearer { os.getenv("LONG_LIVE_TOKEN")}',
     'Content-Type': 'application/json'
@@ -25,7 +25,10 @@ def extract_prayer_times(mosque_link:str=os.getenv("MOSQUE_LINK")) -> pd.DataFra
     # Faire la requête HTTP
     print("getting data from mawaqit mosquee page")
     response = requests.get(mosque_link)
-    response =(response.text.split("var confData =")[1].split(";")[0])
+    if response.status_code != 200:
+        raise Exception(f"Failed to fetch data: {response.status_code}")
+    # Extraire les données JSON de la réponse
+    response =(response.text.split("confData =")[1].split(";")[0])
     data = json.loads(response)
 
     # Extraire le calendrier
@@ -71,7 +74,7 @@ def import_to_home_assistant_calendar(df:pd.DataFrame):
     Args:
         df (pd.DataFrame): the input 5 times prayer dataframe
     """
-    print(df)
+    
     p_times = df.columns
     for i, item in df.iterrows():
         for col in p_times :
